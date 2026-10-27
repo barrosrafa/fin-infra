@@ -71,6 +71,26 @@ services:
     networks:
       - fin-network
 
+  # ========================================================
+  # 4. BACKGROUND WORKER & INGESTION CLUSTER
+  # ========================================================
+  fin-worker:
+    build:
+      context: ../fin-api
+      dockerfile: Dockerfile
+    container_name: fin-worker
+    restart: unless-stopped
+    command: python -m app.worker.tasks
+    environment:
+      - ENVIRONMENT=production
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-finsecretredis}@redis:6379/0
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/fin_db}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - fin-network
+
 networks:
   fin-network:
     name: fin-network
