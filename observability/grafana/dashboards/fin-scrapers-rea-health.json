@@ -1,0 +1,186 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Status dos Circuit Breakers — 12 Plataformas REA",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            { "options": { "0": { "color": "green", "text": "CLOSED (Normal)" } }, "type": "value" },
+            { "options": { "1": { "color": "yellow", "text": "HALF-OPEN (Testando)" } }, "type": "value" },
+            { "options": { "2": { "color": "red", "text": "OPEN (Bloqueado)" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 1 },
+      "id": 2,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "expr": "fin_scraper_circuit_breaker_state",
+          "legendFormat": "{{domain}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Circuit Breakers por Domínio (0=OK, 1=Half-Open, 2=Open)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 3,
+      "title": "Tráfego de Egress e Respostas HTTP dos 12 Alvos",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 4,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (domain, status_code) (rate(fin_scraper_egress_requests_total[5m]))",
+          "legendFormat": "{{domain}} [HTTP {{status_code}}]",
+          "refId": "A"
+        }
+      ],
+      "title": "Taxa de Requisições por Domínio e Status HTTP",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 5,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, domain) (rate(fin_scraper_egress_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95 {{domain}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Latência de Scraping p95 por Domínio",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "id": 6,
+      "title": "Detecção de Rate Limit (HTTP 429) & Bloqueios WAF (HTTP 403)",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 40,
+            "lineWidth": 1
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 17 },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "sum by (domain) (increase(fin_scraper_egress_requests_total{status_code=\"429\"}[5m]))",
+          "legendFormat": "429 - {{domain}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Ocorrências de HTTP 429 (Rate Limit Excedido)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 40,
+            "lineWidth": 1
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 17 },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "sum by (domain) (increase(fin_scraper_egress_requests_total{status_code=\"403\"}[5m]))",
+          "legendFormat": "403 - {{domain}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Ocorrências de HTTP 403 (Bloqueio Cloudflare/LiteSpeed)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["fin", "rea", "scrapers", "anti-bot"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": { "refresh_intervals": ["5s", "10s", "30s", "1m"] },
+  "timezone": "browser",
+  "title": "FIN — REA Scrapers Health & Anti-Bot Gateway",
+  "uid": "fin-scrapers-rea-health"
+}

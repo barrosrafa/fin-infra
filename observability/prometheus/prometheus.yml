@@ -1,0 +1,75 @@
+# ========================================================
+# PROMETHEUS CONFIGURATION — Metrics Engine for FIN Platform
+# ========================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files:
+  - "alerts/api_alerts.yml"
+  - "alerts/scrapers_rea_alerts.yml"
+  - "alerts/infra_alerts.yml"
+
+scrape_configs:
+  # 1. Prometheus Interno
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # 2. FIN API (FastAPI + Prometheus Instrumentator)
+  - job_name: "fin-api"
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["fin-api:8000"]
+    relabel_configs:
+      - target_label: service
+        replacement: fin-api
+
+  # 3. Scraper Egress Gateway (Métricas dos 12 sites REA e Circuit Breakers)
+  - job_name: "scraper-egress-gateway"
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["proxy-rotator:9091"]
+    relabel_configs:
+      - target_label: service
+        replacement: scraper-egress-gateway
+
+  # 4. Traefik Ingress Gateway
+  - job_name: "traefik-gateway"
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["traefik:8080"]
+    relabel_configs:
+      - target_label: service
+        replacement: traefik
+
+  # 5. Redis Exporter
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+    relabel_configs:
+      - target_label: service
+        replacement: redis
+
+  # 6. PostgreSQL / TimescaleDB Exporter
+  - job_name: "postgresql"
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+    relabel_configs:
+      - target_label: service
+        replacement: fin-db
+
+  # 7. OpenTelemetry Collector Pipeline
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["otel-collector:8889"]

@@ -1,0 +1,115 @@
+services:
+  # ========================================================
+  # 1. PROMETHEUS (Metrics Engine)
+  # ========================================================
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: fin-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/alerts:/etc/prometheus/alerts:ro
+      - prometheus_data:/prometheus
+    networks:
+      - fin-network
+
+  # ========================================================
+  # 2. GRAFANA (Dashboards as Code)
+  # ========================================================
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: fin-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - fin-network
+    depends_on:
+      - prometheus
+
+  # ========================================================
+  # 3. ALERTMANAGER (Alerta de Circuit Breakers e Latencia)
+  # ========================================================
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: fin-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks:
+      - fin-network
+
+  # ========================================================
+  # 4. LOKI (Log Aggregation)
+  # ========================================================
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: fin-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./observability/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - fin-network
+
+  # ========================================================
+  # 5. OPENTELEMETRY COLLECTOR
+  # ========================================================
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.95.0
+    container_name: fin-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./observability/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8889:8889" # Prometheus metrics export
+    networks:
+      - fin-network
+
+  # ========================================================
+  # 6. REDIS EXPORTER
+  # ========================================================
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.58.0-alpine
+    container_name: fin-redis-exporter
+    restart: unless-stopped
+    environment:
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-finsecretredis}
+    ports:
+      - "9121:9121"
+    networks:
+      - fin-network
+
+networks:
+  fin-network:
+    name: fin-network
+    external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:

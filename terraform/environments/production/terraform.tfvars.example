@@ -1,0 +1,6 @@
+environment       = "production"
+aws_region        = "us-east-1"
+vpc_cidr          = "10.0.0.0/16"
+redis_auth_token  = "CHANGE_ME_PRODUCTION_TOKEN_VERY_LONG_AND_SECURE_12345"
+neon_database_url = "postgresql://user:password@ep-prod.us-east-2.aws.neon.tech/fin?sslmode=require"
+certificate_arn   = "arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"

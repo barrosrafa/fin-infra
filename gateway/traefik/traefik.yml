@@ -1,0 +1,72 @@
+# ========================================================
+# TRAEFIK V3 — Ingress API Gateway Configuration for FIN
+# ========================================================
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+log:
+  level: INFO
+  format: json
+
+accessLog:
+  format: json
+  filters:
+    statusCodes:
+      - "200-299"
+      - "400-599"
+  fields:
+    defaultMode: keep
+    headers:
+      defaultMode: drop
+      names:
+        User-Agent: keep
+        Authorization: redact
+        X-Forwarded-For: keep
+        X-Request-Id: keep
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    http:
+      tls: {}
+
+  traefik:
+    address: ":8080" # Dashboard & Metricas internas
+
+api:
+  dashboard: true
+  insecure: false
+
+metrics:
+  prometheus:
+    entryPoint: traefik
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+    buckets:
+      - 0.005
+      - 0.01
+      - 0.025
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.5
+      - 5.0
+
+providers:
+  file:
+    filename: "/etc/traefik/dynamic_conf.yml"
+    watch: true

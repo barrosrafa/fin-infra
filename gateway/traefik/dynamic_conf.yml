@@ -1,0 +1,119 @@
+# ========================================================
+# TRAEFIK DYNAMIC CONFIGURATION — Roteamento, Middlewares e Rate Limiting
+# ========================================================
+
+http:
+  routers:
+    # 1. Rota de Health Check
+    health-router:
+      rule: "Path(`/health`)"
+      entryPoints: ["web", "websecure"]
+      service: "api-service"
+      priority: 100
+
+    # 2. Rota de Webhooks de Pagamento (/billing/webhooks/*)
+    # Alta prioridade, preserva o corpo bruto para validacao HMAC e permite burst
+    webhooks-router:
+      rule: "PathPrefix(`/billing/webhooks`) || PathPrefix(`/v1/billing/webhooks`)"
+      entryPoints: ["websecure"]
+      service: "api-service"
+      middlewares:
+        - "webhook-rate-limit"
+        - "secure-headers"
+      priority: 90
+
+    # 3. Rota Geral da API (/v1/* ou /api/*)
+    api-router:
+      rule: "PathPrefix(`/v1`) || PathPrefix(`/api`)"
+      entryPoints: ["websecure"]
+      service: "api-service"
+      middlewares:
+        - "api-rate-limit"
+        - "secure-headers"
+        - "cors-headers"
+      priority: 50
+
+    # 4. Rota Interna de Metricas do Prometheus
+    metrics-router:
+      rule: "Path(`/metrics`)"
+      entryPoints: ["traefik"]
+      service: "prometheus@internal"
+
+  # ========================================================
+  # MIDDLEWARES
+  # ========================================================
+  middlewares:
+    # Rate Limiting por Token Bucket para API Geral
+    api-rate-limit:
+      rateLimit:
+        average: 120 # 120 requisicoes por minuto
+        burst: 200
+        period: 1m
+        sourceCriterion:
+          requestHeaderName: "X-Forwarded-For"
+
+    # Rate Limiting relaxado para Webhooks de Pagamento (Asaas, Stripe)
+    webhook-rate-limit:
+      rateLimit:
+        average: 300
+        burst: 500
+        period: 1m
+        sourceCriterion:
+          requestHeaderName: "X-Forwarded-For"
+
+    # Headers de Seguranca HSTS, CSP, X-Frame-Options
+    secure-headers:
+      headers:
+        sslRedirect: true
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        frameDeny: true
+        customResponseHeaders:
+          X-Powered-By: "fin-platform"
+          Server: ""
+
+    # CORS Headers
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - "GET"
+          - "POST"
+          - "PUT"
+          - "PATCH"
+          - "DELETE"
+          - "OPTIONS"
+        accessControlAllowHeaders:
+          - "Authorization"
+          - "Content-Type"
+          - "Accept"
+          - "Origin"
+          - "X-Requested-With"
+          - "X-Client-Version"
+          - "X-Request-Id"
+        accessControlAllowOriginList:
+          - "https://fin.com.br"
+          - "https://app.fin.com.br"
+          - "http://localhost:3000"
+          - "http://localhost:5173"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 86400
+
+  # ========================================================
+  # SERVICOS INTERNOS
+  # ========================================================
+  services:
+    api-service:
+      loadBalancer:
+        servers:
+          - url: "http://fin-api:8000"
+        passHostHeader: true
+        responseForwarding:
+          flushInterval: "100ms"
+        healthCheck:
+          path: "/health"
+          interval: "10s"
+          timeout: "3s"

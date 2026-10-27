@@ -1,0 +1,32 @@
+groups:
+  - name: infra_alerts
+    rules:
+      - alert: RedisMemoryHigh
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Uso de memória do Redis superior a 80%"
+          description: "O cluster Redis atingiu mais de 80% da memória máxima alocada. Risco de evicção de chaves voláteis."
+
+      - alert: RedisClientConnectionsHigh
+        expr: redis_connected_clients > 1000
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Número excessivo de clientes conectados ao Redis (>1000)"
+          description: "Pools de conexão podem estar vazando conexões ativas com o Redis."
+
+      - alert: PostgresConnectionsExhaustion
+        expr: (pg_stat_activity_count / pg_settings_max_connections) > 0.85
+        for: 5m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "Conexões com o PostgreSQL próximas do limite (>85%)"
+          description: "O pool de conexões do Neon PostgreSQL está atingindo o limite de max_connections."

@@ -1,0 +1,42 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ["alertname", "cluster", "service", "domain"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: "default-receiver"
+
+  routes:
+    - match:
+        severity: disaster
+      receiver: "critical-slack-discord"
+      continue: true
+
+    - match:
+        team: data-platform
+      receiver: "data-platform-channel"
+
+receivers:
+  - name: "default-receiver"
+    webhook_configs:
+      - url: "http://alert-webhook:8080/alerts"
+        send_resolved: true
+
+  - name: "critical-slack-discord"
+    webhook_configs:
+      - url: "https://discord.com/api/webhooks/placeholder/token"
+        send_resolved: true
+
+  - name: "data-platform-channel"
+    webhook_configs:
+      - url: "https://hooks.slack.com/services/placeholder/token"
+        send_resolved: true
+
+inhibit_rules:
+  - source_match:
+      severity: "disaster"
+    target_match:
+      severity: "warning"
+    equal: ["alertname", "service"]

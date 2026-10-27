@@ -1,0 +1,42 @@
+groups:
+  - name: scrapers_rea_alerts
+    rules:
+      - alert: ScraperCircuitBreakerOpen
+        expr: fin_scraper_circuit_breaker_state == 2
+        for: 2m
+        labels:
+          severity: critical
+          team: data-platform
+        annotations:
+          summary: "Circuit Breaker OPEN para o domínio {{ $labels.domain }}"
+          description: "O coletor disparou mais de 5 falhas consecutivas para {{ $labels.domain }}. As requisições para este alvo estão suspensas temporariamente para evitar banimento permanente do IP."
+
+      - alert: ScraperRateLimitSpike
+        expr: rate(fin_scraper_egress_requests_total{status_code="429"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          team: data-platform
+        annotations:
+          summary: "Pico de HTTP 429 (Rate Limit) detectado em {{ $labels.domain }}"
+          description: "O site {{ $labels.domain }} está devolvendo HTTP 429 com frequência. O pool de proxies residenciais ou os intervalos de backoff devem ser aumentados."
+
+      - alert: ScraperHighErrorRate
+        expr: (sum by (domain) (rate(fin_scraper_egress_requests_total{status_code=~"5..|403"}[5m])) / sum by (domain) (rate(fin_scraper_egress_requests_total[5m]))) > 0.15
+        for: 5m
+        labels:
+          severity: critical
+          team: data-platform
+        annotations:
+          summary: "Taxa de erro de scraping elevada (>15%) em {{ $labels.domain }}"
+          description: "O domínio {{ $labels.domain }} apresenta mais de 15% de falhas HTTP 403/5xx nos últimos 5 minutos."
+
+      - alert: ScraperLatencyElevated
+        expr: histogram_quantile(0.95, sum by (le, domain) (rate(fin_scraper_egress_duration_seconds_bucket[5m]))) > 8.0
+        for: 5m
+        labels:
+          severity: warning
+          team: data-platform
+        annotations:
+          summary: "Latência de scraping excessiva (p95 > 8s) em {{ $labels.domain }}"
+          description: "As requisições de coleta para {{ $labels.domain }} estão com tempo de resposta p95 superior a 8 segundos."

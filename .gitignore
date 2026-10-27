@@ -1,0 +1,38 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Observability data & caches
+observability/data/
+prometheus_data/
+grafana_data/
+loki_data/
+
+# OS and Editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+*.pid

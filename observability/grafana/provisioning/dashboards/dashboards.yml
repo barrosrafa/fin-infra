@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'fin-dashboards'
+    orgId: 1
+    folder: 'FIN Platform'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
