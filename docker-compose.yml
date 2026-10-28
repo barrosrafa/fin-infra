@@ -91,6 +91,36 @@ services:
     networks:
       - fin-network
 
+  # Agendador autônomo baseado em políticas e calendários de mercado
+  fin-ingestion-scheduler:
+    build:
+      context: ../fin-ingestion
+      dockerfile: Dockerfile
+    container_name: fin-ingestion-scheduler
+    restart: unless-stopped
+    command: ["python", "-m", "fin_ingestion.cli", "scheduler-start", "--interval", "60"]
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL_ASYNC=${DATABASE_URL_ASYNC}
+      - LOG_LEVEL=INFO
+    networks:
+      - fin-network
+
+  # Worker autônomo da fila persistente no PostgreSQL (FOR UPDATE SKIP LOCKED)
+  fin-ingestion-worker:
+    build:
+      context: ../fin-ingestion
+      dockerfile: Dockerfile
+    container_name: fin-ingestion-worker
+    restart: unless-stopped
+    command: ["python", "-m", "fin_ingestion.workers.runner"]
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL_ASYNC=${DATABASE_URL_ASYNC}
+      - LOG_LEVEL=INFO
+    networks:
+      - fin-network
+
 networks:
   fin-network:
     name: fin-network
