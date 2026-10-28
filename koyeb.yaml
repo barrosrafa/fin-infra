@@ -1,0 +1,38 @@
+app: fin-api
+services:
+  - name: fin-api-service
+    type: web
+    git:
+      repository: github.com/barrosrafa/fin-api
+      branch: main
+      workdir: /
+    instance_type: nano
+    regions:
+      - was
+    ports:
+      - port: 8000
+        path: /
+        protocol: http
+    routes:
+      - path: /
+        port: 8000
+    health_checks:
+      - path: /health
+        port: 8000
+        interval: 30
+        timeout: 5
+        healthy_threshold: 2
+        unhealthy_threshold: 3
+    env:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: PORT
+        value: "8000"
+      - key: HOST
+        value: "0.0.0.0"
+      - key: DATABASE_URL
+        value: "{{ secret.DATABASE_URL }}"
+      - key: REDIS_URL
+        value: "{{ secret.REDIS_URL }}"

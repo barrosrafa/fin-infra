@@ -6,6 +6,8 @@ Repositório central de **Infraestrutura como Código (Terraform)**, **Pipelines
 - **Banco de Dados Relacionado:** `https://github.com/barrosrafa/fin-db` (PostgreSQL 18 / TimescaleDB no Neon)
 - **API & Worker:** `https://github.com/barrosrafa/fin-api` (FastAPI / ARQ / Redis)
 - **Ingestão & dbt:** `https://github.com/barrosrafa/fin-ingestion` (Scrapers REA & Pipelines)
+- **Frontend Web:** `https://github.com/barrosrafa/fin-web` (Next.js 16 / React 19)
+- **Deploy Distribuído Gratuito:** [`koyeb.yaml`](koyeb.yaml) | [`scripts/verify_cloud_deploy.py`](scripts/verify_cloud_deploy.py)
 - **Especificação REA & Gateway:** [`docs/REA_ANALYSIS_AND_GATEWAY_SPEC.md`](docs/REA_ANALYSIS_AND_GATEWAY_SPEC.md)
 - **Documento Arquitetural:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
@@ -237,5 +239,26 @@ fin-infra/
 ├── Makefile                             # Automação de tarefas de desenvolvimento
 ├── .env.example                         # Template de variáveis de ambiente
 ├── .gitignore                           # Exclusões do Git
+├── koyeb.yaml                           # Manifesto declarativo de deploy no Koyeb (Free Nano)
 └── README.md                            # Guia principal de uso
 ```
+
+---
+
+## 🚀 Arquitetura Distribuída 100% Gratuita (Free Tier)
+
+Para disponibilizar o ecossistema com acesso público 24/7 sem nenhum custo de infraestrutura:
+
+| Componente | Provedor | Plano | Configuração / Endpoint |
+|---|---|---|---|
+| **fin-web** | **Vercel** | Hobby ($0) | Build Next.js 16 automático via GitHub, SSL global e CDN edge |
+| **fin-api** | **Koyeb** | Free Nano ($0) | Container Python 3.12 via `koyeb.yaml` ou GitHub App nativo, porta dinâmica `$PORT` |
+| **fin-db** | **Neon** | Free Tier ($0) | PostgreSQL 18 Serverless com TimescaleDB e pgvector |
+| **Redis** | **Redis Cloud / Upstash** | Free Tier ($0) | Fila de mensagens e cache de cotações com TLS |
+| **fin-ingestion** | **GitHub Actions** | 2.000 min/mês ($0) | Workflows cron no pregão da B3, fechamento e fins de semana |
+
+### Testando a Conectividade Remota
+```bash
+python scripts/verify_cloud_deploy.py --api-url <URL_DO_KOYEB> --web-url <URL_DA_VERCEL>
+```
+
