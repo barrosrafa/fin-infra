@@ -251,14 +251,14 @@ Para disponibilizar o ecossistema com acesso público 24/7 sem nenhum custo de i
 
 | Componente | Provedor | Plano | Configuração / Endpoint |
 |---|---|---|---|
-| **fin-web** | **Vercel** | Hobby ($0) | Build Next.js 16 automático via GitHub, SSL global e CDN edge |
-| **fin-api** | **Koyeb** | Free Nano ($0) | Container Python 3.12 via `koyeb.yaml` ou GitHub App nativo, porta dinâmica `$PORT` |
+| **fin-web** | **Vercel** | Hobby ($0) | [https://fin-web-wheat.vercel.app](https://fin-web-wheat.vercel.app) |
+| **fin-api** | **Render** | Free ($0) | [https://fin-api-jbrz.onrender.com](https://fin-api-jbrz.onrender.com) |
 | **fin-db** | **Neon** | Free Tier ($0) | PostgreSQL 18 Serverless com TimescaleDB e pgvector |
-| **Redis** | **Redis Cloud / Upstash** | Free Tier ($0) | Fila de mensagens e cache de cotações com TLS |
+| **Redis** | **Managed** | Free Tier ($0) | Fila de mensagens e cache com fallback de resiliência |
 | **fin-ingestion** | **GitHub Actions** | 2.000 min/mês ($0) | Workflows cron no pregão da B3, fechamento e fins de semana |
 
 ### Testando a Conectividade Remota
 ```bash
-python scripts/verify_cloud_deploy.py --api-url <URL_DO_KOYEB> --web-url <URL_DA_VERCEL>
+python scripts/verify_cloud_deploy.py --api-url https://fin-api-jbrz.onrender.com --web-url https://fin-web-wheat.vercel.app
 ```
 
