@@ -28,12 +28,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install dependencies
+        run: |
+          if [ -f pyproject.toml ]; then
+            uv sync --all-extras
+          fi
+
       - name: Test Ingestion Pipelines
         run: |
-          echo "Running mock contract tests for 12 REA platforms (StatusInvest, Investidor10, Fundamentei, Fundamentus, ClubeFII, FundsExplorer, FIIs.com.br, MaisRetorno, AnaliseDeAcoes, Brick360, ADVFN, ETFsBrasil)..."
-          # uv run pytest tests/test_collectors.py -v
-
-      - name: Validate dbt Models
-        run: |
-          echo "Validating dbt SQL staging and dimensional models syntax..."
-          # uv run dbt compile
+          uv run pytest tests/ -v

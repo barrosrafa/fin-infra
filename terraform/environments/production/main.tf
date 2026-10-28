@@ -8,13 +8,13 @@ terraform {
   }
 
   # Configuração de Backend Remoto S3 + DynamoDB para Produção
-  # backend "s3" {
-  #   bucket         = "fin-terraform-state-production"
-  #   key            = "production/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   dynamodb_table = "fin-terraform-locks-production"
-  #   encrypt        = true
-  # }
+  backend "s3" {
+    bucket         = "fin-terraform-state-production"
+    key            = "production/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "fin-terraform-locks-production"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
@@ -81,6 +81,23 @@ module "database_cache" {
   neon_database_url  = var.neon_database_url
 }
 
+resource "aws_secretsmanager_secret" "redis_url" {
+  name                    = "fin/${var.environment}/redis-url"
+  description             = "Redis connection URL for ECS tasks"
+  kms_key_id              = module.security.kms_key_arn
+  recovery_window_in_days = 0
+
+  tags = {
+    Name        = "fin-${var.environment}-redis-url"
+    Environment = var.environment
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "redis_url" {
+  secret_id     = aws_secretsmanager_secret.redis_url.id
+  secret_string = module.database_cache.redis_connection_url
+}
+
 # 6. Ingress Gateway & ALB
 module "gateway" {
   source = "../../modules/gateway"
@@ -114,5 +131,5 @@ module "compute_ecs" {
   worker_min_capacity = 2
   worker_max_capacity = 8
 
-  redis_url_secret_arn = module.database_cache.redis_connection_url
+  redis_url_secret_arn = aws_secretsmanager_secret.redis_url.arn
 }

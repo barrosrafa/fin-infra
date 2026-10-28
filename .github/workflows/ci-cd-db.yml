@@ -31,7 +31,6 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Dry-run Migrations
+      - name: Dry-run Migrations & Validate SQL Syntax
         run: |
-          echo "Checking SQL migration scripts idempotency and IF NOT EXISTS / ADD COLUMN IF NOT EXISTS compliance..."
-          # uv run --with "psycopg[binary]" python3 scripts/migrate.py --dry-run
+          uv run --with "psycopg[binary]" python3 scripts/migrate.py --dry-run

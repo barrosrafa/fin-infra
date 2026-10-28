@@ -67,8 +67,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          echo "Building multi-stage production Docker image for fin-api..."
-          # docker build -t fin-api:${{ github.sha }} .
+          docker build -t fin-api:${{ github.sha }} -t fin-api:latest .
 
       - name: Rolling Deploy to ECS Fargate
         run: |
