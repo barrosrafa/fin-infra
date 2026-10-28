@@ -62,7 +62,7 @@ def main():
     results.append(check_url(f"{api_base}/health", "API Health Endpoint"))
 
     # 2. API Public Market Route
-    results.append(check_url(f"{api_base}/api/v1/market/quote/PETR4", "API Market Quote (PETR4)"))
+    results.append(check_url(f"{api_base}/api/v1/market/PETR4", "API Market Quote (PETR4)"))
 
     # 3. Web Home Page
     results.append(check_url(f"{web_base}", "Frontend Web Home"))
