@@ -31,6 +31,7 @@ http:
         - "api-rate-limit"
         - "secure-headers"
         - "cors-headers"
+        - "private-api-cache"
       priority: 50
 
     # 4. Rota Interna de Metricas do Prometheus
@@ -43,6 +44,12 @@ http:
   # MIDDLEWARES
   # ========================================================
   middlewares:
+    # Preserve private data at the edge; cache public assets only on explicit routes.
+    private-api-cache:
+      headers:
+        customResponseHeaders:
+          Cache-Control: "private, no-store"
+
     # Rate Limiting por Token Bucket para API Geral
     api-rate-limit:
       rateLimit:
@@ -94,6 +101,7 @@ http:
           - "X-Requested-With"
           - "X-Client-Version"
           - "X-Request-Id"
+          - "Idempotency-Key"
         accessControlAllowOriginList:
           - "https://fin.com.br"
           - "https://app.fin.com.br"

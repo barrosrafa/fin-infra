@@ -103,6 +103,11 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_URL_ASYNC=${DATABASE_URL_ASYNC}
       - LOG_LEVEL=INFO
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-finsecretredis}@redis:6379/0
+      - DISTRIBUTED_SOURCE_CONTROLS=true
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
       - fin-network
 
@@ -118,6 +123,11 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_URL_ASYNC=${DATABASE_URL_ASYNC}
       - LOG_LEVEL=INFO
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-finsecretredis}@redis:6379/0
+      - DISTRIBUTED_SOURCE_CONTROLS=true
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
       - fin-network
 
