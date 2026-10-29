@@ -71,7 +71,6 @@ http:
     # Headers de Seguranca HSTS, CSP, X-Frame-Options
     secure-headers:
       headers:
-        sslRedirect: true
         stsSeconds: 63072000
         stsIncludeSubdomains: true
         stsPreload: true

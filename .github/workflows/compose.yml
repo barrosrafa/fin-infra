@@ -1,0 +1,49 @@
+name: Docker gateway configuration validation
+on:
+  push:
+    branches: [main]
+    paths: ['docker-compose*.yml', 'gateway/**', '.github/workflows/compose.yml']
+  pull_request:
+    paths: ['docker-compose*.yml', 'gateway/**', '.github/workflows/compose.yml']
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REDIS_PASSWORD: ci-only-password-not-for-production
+      DATABASE_URL: postgresql://postgres:ci@postgres/fin_ci
+      DATABASE_URL_ASYNC: postgresql+asyncpg://postgres:ci@postgres/fin_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose interpolation and schema
+        run: docker compose config --quiet
+      - name: Validate the actual Traefik parser
+        run: |
+          docker network create fin-config-check
+          docker run -d --name fin-api --network fin-config-check nginx:alpine
+          docker run -d --name fin-traefik-config --network fin-config-check \
+            -v "$PWD/gateway/traefik/traefik.yml:/etc/traefik/traefik.yml:ro" \
+            -v "$PWD/gateway/traefik/dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro" traefik:v3.0
+          sleep 5
+          test "$(docker inspect -f '{{.State.Running}}' fin-traefik-config)" = true
+          docker logs fin-traefik-config > /tmp/traefik.log 2>&1
+          cat /tmp/traefik.log
+          if grep -Ei '"level":"(error|fatal)"|field not found|failed to decode' /tmp/traefik.log; then
+            exit 1
+          fi
+      - name: Validate the actual Nginx parser
+        run: |
+          mkdir -p /tmp/fin-config-certs
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 -subj '/CN=ci.local' \
+            -keyout /tmp/fin-config-certs/fin.key -out /tmp/fin-config-certs/fin.crt
+          docker run --rm --network fin-config-check \
+            -v "$PWD/gateway/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" \
+            -v "$PWD/gateway/nginx/conf.d:/etc/nginx/conf.d:ro" \
+            -v "/tmp/fin-config-certs:/etc/nginx/certs:ro" nginx:alpine nginx -t
+      - name: Clean up test containers
+        if: always()
+        run: |
+          docker rm -f fin-traefik-config fin-api || true
+          docker network rm fin-config-check || true
