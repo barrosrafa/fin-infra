@@ -262,3 +262,11 @@ Para disponibilizar o ecossistema com acesso público 24/7 sem nenhum custo de i
 python scripts/verify_cloud_deploy.py --api-url https://fin-api-jbrz.onrender.com --web-url https://fin-web-wheat.vercel.app
 ```
 
+
+## Estado operacional verificado em 29/10/2026
+
+O destino de produção identificado é o serviço Docker gerenciado `fin-api` no **Render Free**, junto a Vercel, Neon e Upstash. O projeto Render consultado contém apenas esse serviço. O plano Free não oferece shell/SSH e não constitui um host com Docker Engine administrável para executar estes arquivos Compose. Nenhum servidor separado de Traefik foi identificado; os manifests não foram apresentados como aplicados nesse ambiente.
+
+A CI `compose.yml` valida a interpolação do Compose e inicia contêineres descartáveis para verificar os parsers reais do Traefik v3.0 e Nginx. Isso é validação de configuração, não deploy de infraestrutura. Portas de Redis, proxy de saída, métricas e administração estão limitadas a loopback no host, e `REDIS_PASSWORD` deve ser fornecida explicitamente.
+
+Para aplicar a stack em um servidor real, é necessário primeiro definir o host autorizado, o acesso SSH/Docker, o diretório dos repositórios e os domínios/certificados de TLS. Não apontar o Compose para o serviço Render, nem substituir sua imagem por Traefik: isso não fornece um Docker daemon e interromperia a API. Não foi contratado ou provisionado um servidor pago nesta operação.
