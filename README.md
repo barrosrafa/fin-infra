@@ -9,6 +9,7 @@ Repositório central de **Infraestrutura como Código (Terraform)**, **Pipelines
 - **Frontend Web:** `https://github.com/barrosrafa/fin-web` (Next.js 16 / React 19)
 - **Deploy Distribuído Gratuito:** [`koyeb.yaml`](koyeb.yaml) | [`scripts/verify_cloud_deploy.py`](scripts/verify_cloud_deploy.py)
 - **Especificação REA & Gateway:** [`docs/REA_ANALYSIS_AND_GATEWAY_SPEC.md`](docs/REA_ANALYSIS_AND_GATEWAY_SPEC.md)
+- **Gateway de API para previews:** [`docker-compose.staging-gateway.yml`](docker-compose.staging-gateway.yml) | [`gateway/staging/`](gateway/staging/)
 - **Documento Arquitetural:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
 ---
@@ -82,6 +83,16 @@ O `fin-infra` conecta os componentes do ecossistema através de uma arquitetura 
 ---
 
 ## ⚡ Os 4 Pilares do `fin-infra`
+
+### Gateway enxuto para Preview → API de Staging
+
+`docker-compose.staging-gateway.yml` inicia um Nginx isolado que aceita somente `/api/v1/*`, aplica limite de 15 req/s por IP e encaminha para o hostname HTTPS da API de staging. `/healthz` verifica `/health` no upstream. O serviço escuta em `127.0.0.1:8088` por padrão, para ser publicado via Cloudflare Tunnel ou ingress já confiável; não expõe porta diretamente à internet.
+
+1. Defina `API_STAGING_HOST` com o hostname da API de staging (sem esquema, porta ou caminho) e `API_STAGING_GATEWAY_PORT` se necessário, em um arquivo de ambiente local não versionado.
+2. Suba apenas essa camada: `docker compose --env-file .env.staging -f docker-compose.staging-gateway.yml up -d --build`.
+3. Publique `/api/v1/*` e `/healthz` do gateway por HTTPS em um hostname dedicado. No deployment **Preview** do `fin-web`, aponte `API_BACKEND_URL` para essa origem HTTPS. Mantenha `API_BACKEND_URL` de produção separado no ambiente **Production**.
+
+O gateway não configura credenciais da API nem acessa Neon; a aplicação Next encaminha o tráfego e o CMS usa uma conexão de staging independente descrita no README do `fin-web`.
 
 ### 1. Terraform (Infraestrutura como Código)
 Estrutura modular limpa e validada:

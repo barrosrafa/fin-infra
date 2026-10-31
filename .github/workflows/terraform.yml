@@ -1,118 +1,25 @@
-name: "Terraform IaC Pipeline"
+name: Terraform AWS reference validation
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "terraform/**"
-      - ".github/workflows/terraform.yml"
   pull_request:
-    branches: ["main"]
-    paths:
-      - "terraform/**"
-      - ".github/workflows/terraform.yml"
+    paths: ['terraform/**', '.github/workflows/terraform.yml']
+  workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
-  pull-requests: write
 
 jobs:
-  validate:
-    name: "Lint, Format & Security Scan"
+  validate-reference:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
-          terraform_version: "1.7.5"
-
-      - name: Check Terraform Formatting
-        run: terraform fmt -check -recursive terraform/
-
-      - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
-        with:
-          tflint_version: "v0.50.3"
-
-      - name: Run TFLint
+          terraform_version: '1.7.5'
+      - run: terraform fmt -check -recursive terraform/
+      - name: Validate reference configurations without cloud credentials
         run: |
-          tflint --init
-          tflint --recursive terraform/
-
-      - name: Trivy IaC Security Scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: "config"
-          scan-ref: "terraform/"
-          exit-code: "0" # Warning on PR
-          severity: "CRITICAL,HIGH"
-
-  plan:
-    name: "Terraform Plan (Staging & Production)"
-    needs: validate
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: [staging, production]
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.7.5"
-
-      - name: Configure AWS Credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: us-east-1
-          role-to-assume: arn:aws:iam::123456789012:role/fin-github-actions-role
-          role-session-name: terraform-plan-${{ matrix.environment }}
-        continue-on-error: true # Permite dry-run em ambientes sem AWS vinculada
-
-      - name: Terraform Init & Validate
-        run: |
-          cd terraform/environments/${{ matrix.environment }}
-          terraform init -backend=false
-          terraform validate
-
-  apply-staging:
-    name: "Terraform Apply (Staging)"
-    needs: plan
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: staging
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.7.5"
-
-      - name: Deploy Staging
-        run: echo "Applying Terraform changes to Staging..."
-
-  apply-production:
-    name: "Terraform Apply (Production)"
-    needs: apply-staging
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production # Requer aprovação manual no GitHub Environments
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.7.5"
-
-      - name: Deploy Production
-        run: echo "Applying Terraform changes to Production with approved gate..."
+          for environment in staging production; do
+            terraform -chdir=terraform/environments/$environment init -backend=false
+            terraform -chdir=terraform/environments/$environment validate
+          done

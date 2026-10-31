@@ -1,10 +1,10 @@
 name: Docker gateway configuration validation
 on:
   push:
-    branches: [main]
-    paths: ['docker-compose*.yml', 'gateway/**', '.github/workflows/compose.yml']
+    branches: [main, "codex/**"]
+    paths: ['docker-compose*.yml', 'gateway/**', '.env.example', '.github/workflows/compose.yml']
   pull_request:
-    paths: ['docker-compose*.yml', 'gateway/**', '.github/workflows/compose.yml']
+    paths: ['docker-compose*.yml', 'gateway/**', '.env.example', '.github/workflows/compose.yml']
 permissions:
   contents: read
 jobs:
@@ -16,9 +16,13 @@ jobs:
       DATABASE_URL: postgresql://postgres:ci@postgres/fin_ci
       DATABASE_URL_ASYNC: postgresql+asyncpg://postgres:ci@postgres/fin_ci
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Validate Compose interpolation and schema
         run: docker compose config --quiet
+      - name: Validate the isolated staging gateway Compose file
+        env:
+          API_STAGING_HOST: fin-api-staging.example.koyeb.app
+        run: docker compose -f docker-compose.staging-gateway.yml config --quiet
       - name: Validate the actual Traefik parser
         run: |
           docker network create fin-config-check

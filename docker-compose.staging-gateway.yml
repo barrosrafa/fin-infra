@@ -1,0 +1,14 @@
+services:
+  api-staging-gateway:
+    build:
+      context: ./gateway/staging
+    restart: unless-stopped
+    environment:
+      API_STAGING_HOST: ${API_STAGING_HOST:?Set API_STAGING_HOST to the hostname of the staging API}
+    ports:
+      - "127.0.0.1:${API_STAGING_GATEWAY_PORT:-8088}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
