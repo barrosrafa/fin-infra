@@ -1,0 +1,6 @@
+{
+  "name": "fin-ingestion-watchdog",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node --test test/*.test.js"}
+}
