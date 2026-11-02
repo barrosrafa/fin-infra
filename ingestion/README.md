@@ -19,7 +19,7 @@ conta existente com plano gratuito; não ativar plano pago para contornar limite
 3. Em `cloudflare/`, executar `npx wrangler login` e cadastrar os secrets
    `GITHUB_DISPATCH_TOKEN` e `HEALTH_TOKEN` com `wrangler secret put`. Nunca passar
    seus valores em argumento de comando, logs ou arquivo versionado.
-4. Executar `npm test` e `npx wrangler deploy`. Conferir cron, conta e plano no
+4. Executar `npm ci`, `npm test`, `npm run deploy:dry-run` e `npm run deploy`. Conferir cron, conta e plano no
    painel; registrar nome/URL do Worker, sem credenciais, na evidência de release.
 5. Invocar o endpoint com o health token sem registrar cabeçalho; conferir a
    execução `workflow_dispatch` e o recibo `data/runtime/summary.json` em Actions.
@@ -37,3 +37,18 @@ não uma mensagem presumida como entregue.
 
 Rollback: remover/desabilitar o cron do Worker e manter cron Actions + ledger.
 Não apagar tarefas/cursor para desfazer deploy do disparador.
+
+
+## Build vinculado ao Git
+
+O código do Worker pertence a `barrosrafa/fin-infra`, branch `main`, diretório
+`ingestion/cloudflare`. O destino do dispatch continua sendo o repositório
+`barrosrafa/fin-ingestion` e o workflow `engine-schedule.yml`; esse é o alvo de
+execução, não o repositório de build do Worker. Build command: `npm test`;
+deploy command: `npm run deploy`. O Wrangler é fixado pelo package-lock e não
+requer instalação global. Não vincular o build à raiz do projeto Python.
+
+Antes do deploy, comparar variáveis remotas com `wrangler.jsonc`, preservar os
+secrets existentes e guardar o ID da versão ativa. A presença dos nomes dos
+secrets não prova que o token GitHub ainda seja válido: observar o resultado de
+uma execução `scheduled` ou de uma chamada autenticada e o workflow correspondente.

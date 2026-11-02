@@ -2,5 +2,12 @@
   "name": "fin-ingestion-watchdog",
   "private": true,
   "type": "module",
-  "scripts": {"test": "node --test test/*.test.js"}
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "deploy": "wrangler deploy",
+    "deploy:dry-run": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "4.156.0"
+  }
 }
