@@ -52,3 +52,8 @@ Antes do deploy, comparar variáveis remotas com `wrangler.jsonc`, preservar os
 secrets existentes e guardar o ID da versão ativa. A presença dos nomes dos
 secrets não prova que o token GitHub ainda seja válido: observar o resultado de
 uma execução `scheduled` ou de uma chamada autenticada e o workflow correspondente.
+
+Verificação em 01/11/2026: o vínculo incorreto com `fin-ingestion` foi substituído
+por `fin-infra`, `main`, `ingestion/cloudflare`, usando o token de build existente.
+Os comandos ficaram `npm test` e `npm run deploy`; builds de preview ficaram
+desativados. Essa correção não altera o repositório destinatário dos dispatches.
